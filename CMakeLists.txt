@@ -7,6 +7,9 @@
 cmake_minimum_required(VERSION 3.10)
 
 project(RE2 CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+
 include(CMakePackageConfigHelpers)
 include(CTest)
 include(GNUInstallDirs)
@@ -20,11 +23,11 @@ option(USEPCRE "build against PCRE for testing and benchmarking" OFF)
 # See https://groups.google.com/g/re2-dev/c/P6_NM0YIWvA for details.
 # This has no effect unless RE2 is being built for an Apple platform
 # such as macOS or iOS.
-option(RE2_BUILD_FRAMEWORK "build RE2 as a framework" OFF)
+option(RE2_BUILD_FRAMEWORK "build RE2 as a framework" ON)
 
 # CMake seems to have no way to enable/disable testing per subproject,
 # so we provide an option similar to BUILD_TESTING, but just for RE2.
-option(RE2_BUILD_TESTING "enable testing for RE2" ON)
+option(RE2_BUILD_TESTING "enable testing for RE2" OFF)
 
 # The pkg-config Requires: field.
 set(REQUIRES)
@@ -55,6 +58,10 @@ if(WIN32)
   add_definitions(-DUNICODE -D_UNICODE -DSTRICT -DNOMINMAX)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS)
 endif()
+
+set(CMAKE_TRY_COMPILE_PLATFORM_VARIABLES
+    "CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED")
+set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO")
 
 if(UNIX)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -105,8 +112,8 @@ set(RE2_HEADERS
     re2/stringpiece.h
     )
 
-add_library(re2 ${RE2_SOURCES})
-target_compile_features(re2 PUBLIC cxx_std_11)
+add_library(re2 ${RE2_SOURCES} ${RE2_HEADERS})
+target_compile_features(re2 PUBLIC cxx_std_17)
 target_include_directories(re2 PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 # CMake gives "set_target_properties called with incorrect number of arguments."
 # errors if we don't quote ${RE2_HEADERS}, so quote it despite prevailing style.
@@ -142,7 +149,7 @@ if(RE2_BUILD_TESTING)
       )
 
   add_library(testing STATIC ${TESTING_SOURCES})
-  target_compile_features(testing PUBLIC cxx_std_11)
+  target_compile_features(testing PUBLIC cxx_std_17)
   target_link_libraries(testing PUBLIC re2)
 
   set(TEST_TARGETS
@@ -175,14 +182,14 @@ if(RE2_BUILD_TESTING)
 
   foreach(target ${TEST_TARGETS})
     add_executable(${target} re2/testing/${target}.cc util/test.cc)
-    target_compile_features(${target} PUBLIC cxx_std_11)
+    target_compile_features(${target} PUBLIC cxx_std_17)
     target_link_libraries(${target} testing ${EXTRA_TARGET_LINK_LIBRARIES})
     add_test(NAME ${target} COMMAND ${target})
   endforeach()
 
   foreach(target ${BENCHMARK_TARGETS})
     add_executable(${target} re2/testing/${target}.cc util/benchmark.cc)
-    target_compile_features(${target} PUBLIC cxx_std_11)
+    target_compile_features(${target} PUBLIC cxx_std_17)
     target_link_libraries(${target} testing ${EXTRA_TARGET_LINK_LIBRARIES})
   endforeach()
 endif()
